@@ -1,0 +1,274 @@
+---
+title: "Homework"
+output: 
+date: "2023-10-09"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r, include=FALSE}
+library(tinytex)
+#can now knit to pdf
+```
+
+
+## QUESTION 01: Data Visualisation for Science Communication
+
+
+### a) Figure:
+
+```{r bad figure code, echo=FALSE, fig.show='asis'}
+
+# There is no need to provide the code for your bad figure, just use echo=FALSE so the code is hidden. Make sure your figure is visible after you knit it. 
+
+install.packages("ggplot2", repos = "http://cran.us.r-project.org")
+install.packages("palmerpenguins", repos = "http://cran.us.r-project.org")
+install.packages("janitor", repos = "http://cran.us.r-project.org")
+install.packages("dplyr", repos = "http://cran.us.r-project.org")
+#install.packages("tidyverse", repos = "http://cran.us.r-project.org")
+
+#if repos not required use:
+#install.packages("ggplot2")
+#install.packages("palmerpenguins")
+#install.packages("janitor")
+#install.packages("dplyr")
+#install.packages("tidyverse")
+
+
+library(ggplot2)
+library(palmerpenguins)
+library(janitor)
+library(dplyr)
+#library(tidyverse)
+
+head(penguins)
+
+penguins_nona<- na.omit(penguins)
+
+#trying out different plots
+
+#ggplot(data=penguins_nona,aes(x=sex))+
+ # geom_bar()+
+  #labs(x= "sex", y= "frequency")+
+  #coord_cartesian(ylim = c(150, 170))
+  
+ # ggplot(data=penguins_clean, aes(x=sex, y=flipper_length_mm))+
+   # geom_point()
+  
+# ggplot(data=penguins_clean,aes(x=sex, y= flipper_length_mm, fill= species))+
+ # geom_bar(stat="identity")+
+  # scale_fill_manual(values=c('cyan1', 'cyan2', 'cyan3'))
+  # labs (y="flipper length in mm")+
+   #coord_cartesian(ylim = c(20000, 30000))
+   
+    ggplot(data=penguins_nona,aes(x=sex, y= flipper_length_mm, fill= species))+
+  geom_bar(stat="identity")+
+   labs (y="flipper length in mm")+
+   coord_cartesian(ylim = c(4000, 34000))
+
+  
+```
+
+### b) Write about how your design choices mislead the reader about the underlying data (200-300 words).
+This bar chart is misleading because the scale will make it quite hard to compare the bars properly. The y axis does not start at zero, but may look as if it does. It makes the differences between the sexes seem like they are greater than they are. 
+
+
+References:
+Baker, M. (2016). 1,500 scientists lift the lid on reproducibility. Nature, 533(7604), 452–454. https://doi.org/10.1038/533452aData Carpentry contributors. (2019). Data visualization with ggplot2. Datacarpentry.org. https://datacarpentry.org/R-ecology-lesson/04-visualization-ggplot2.htmlRoe-Raymond, C. S. (2020). How to Make Effective Plots (using R). https://researchcomputing.princeton.edu/sites/g/files/toruqf311/files/effplots_r_small_20200922.pdf
+
+------------------------------------------------------------------------
+
+## QUESTION 2: Data Pipeline
+
+
+------------------------------------------------------------------------
+
+### Introduction
+
+
+```{r Data Exploration}
+
+#installing and loading packages 
+
+install.packages("tinytex", repos = "http://cran.us.r-project.org")
+
+library(ggplot2)
+library(palmerpenguins)
+library(janitor)
+library(dplyr)
+library(tinytex)
+
+
+#checking columns and full dataset
+head (penguins_raw)
+names(penguins_raw)
+
+#penguins_raw
+
+#picking data I want to use
+penguins_raw$`Body Mass (g)`
+penguins_raw$Island
+
+
+
+island <- penguins_raw$Island
+body_mass_g <- penguins_raw$`Body Mass (g)` 
+species <- penguins_raw$Species
+#species
+
+#plotting with all species
+ggplot(data= penguins_raw, aes(x = island, y = body_mass_g), na.rm= TRUE)+ 
+  geom_point(aes(colour = factor(species)))
+
+#then plotting with adelie filtered
+adelie <- filter(penguins_raw,species == "Adelie Penguin (Pygoscelis adeliae)" )
+#adelie
+
+#dropping NAs
+adelie<-adelie[-which(is.na(adelie$`Body Mass (g)`)),]
+
+#checking they are gone
+adelie$`Body Mass (g)`
+adelie$Island
+
+ad_island <- adelie$Island
+ad_body_mass_g <- adelie$`Body Mass (g)`
+
+
+#first visualisations of the data
+
+#ggplot(data= adelie, aes(x = ad_island, y = ad_body_mass_g))+ 
+  #geom_point()
+
+ggplot(adelie, aes(as.factor(ad_island), ad_body_mass_g)) +
+    geom_bar(stat = "identity") +
+    labs(y = "Body mass in g", x = "Island")
+
+
+
+```
+Here I looked around the data and decided to use the data for body mass and islands, for the adelie species
+I plotted a scatter graph, bar chart, then decided to keep the bar chart as it was a clearer representation of the results and better for the fact island is categorical data
+
+From the exploratory bar chart, it shows there may be a difference in body mass of Adelie penguins between the three islands
+However there are no error bars to see how much they overlap, which could indicate how reliable the data is
+
+### Hypothesis
+
+There is a significant difference in the body mass of adelie penguins between the three islands
+-at least one island has a different mean
+
+Null hypothesis=  there is no significant difference in body mass of adelie penguins between the three islands
+-all the means are equal
+
+### Statistical Methods
+
+```{r Statistics}
+
+
+#likely doing an ANOVA as there are 3 body mass means for the 3 different islands
+
+#the anova test
+adelie_aov <- aov(body_mass_g ~ island,
+  data = adelie
+)
+
+summary(adelie_aov)
+
+```
+The summary of the ANOVA shows there is a significant difference as the p-value is less than than 0.05, it is <0.001
+
+We also find the F value is 110, a high value different from 1, showing the variation is more than expected by chance
+
+# Then checking the assumptions
+
+```{r}
+
+plot(adelie_aov)
+
+```
+
+1) residual vs fitted is flat horizontally 
+2) normal qq plot looks pretty good, although ends are slightly curved
+3) scale location plot is not horizontal, data is not equally spread across the graph which is quite concerning
+4) residual vs leverage plot does not have any clear cookes lines
+
+### Results & Discussion
+
+
+```{r Plotting Results}
+
+install.packages("remotes", repos = "http://cran.us.r-project.org")
+remotes::install_github("easystats/report")
+library("report")
+
+report(adelie_aov)
+
+```
+The report clarifies that the p value <0.001 so the effect of different islands is significantly significant on body mass
+
+```{r}
+#plotting the data 
+boxplot <- ggplot(data= adelie, aes(x= factor(ad_island) , y = ad_body_mass_g), na.rm= TRUE)+ 
+  geom_boxplot()+
+ labs( x= ("Island"), y= ("Body mass in g"))
+boxplot
+
+#then saving the image
+ggsave("island_bodymass_boxplot.png", plot = boxplot)
+```
+This boxplot shows the difference in body mass between the islands, the means are different. Dream has a lower mean than Torgesen, which is lower than Biscoe
+ 
+
+### Conclusion
+The null hypothesis can be rejected as the p value is less than 0.05
+At least on of the islands has Adelie penguins with a significantly different body mass
+
+------------------------------------------------------------------------
+
+## QUESTION 3: Open Science
+
+### a) GitHub
+
+*Upload your RProject you created for **Question 2** and any files and subfolders used to GitHub. Do not include any identifiers such as your name. Make sure your GitHub repo is public.*
+
+*GitHub link: https://github.com/clownFSH/Reproducibleassignment*
+
+
+### b) Share your repo with a partner, download, and try to run their data pipeline.
+
+*Partner's GitHub link:https://github.com/skittles0811/ReproducibilityGithub*
+
+
+### c) Reflect on your experience running their code. (300-500 words)
+
+-   *What elements of your partner's code helped you to understand their data pipeline?*
+Their code is clear and easy to follow with comments added throughout. Each line is explained well and formatting is well done 
+
+-   *Did it run? Did you need to fix anything?*
+The R markdown file had some problems with running as there was a problem with finding the csv that was saved in my partners one drive
+I am able to work around this by downloading the data myself from their github repository, and changing the line saying where the file is saved. It is the line of code that reads "penguins_raw <- read.csv("C:\\user...\\penguins_raw_data.csv")"
+that is stopping the rest of the document from working
+
+-   *What suggestions would you make for improving their code to make it more understandable or reproducible, and why?*
+Adding code to install the required packages will make the code more reproducible as loading the packages straight away will only work if the person receiving the code already has the relevant packages
+
+-   *If you needed to alter your partner's figure using their code, do you think that would be easy or difficult, and why?*
+I would be able to edit my partner's figure by using the functions they have saved in their github repository. This means I will not be overriding any of their data, I will instead be able to use their change their plot function to change the figures.
+
+### d) Reflect on your own code based on your experience with your partner's code and their review of yours. (300-500 words)
+
+-   *What improvements did they suggest, and do you agree?*
+My partner suggests adding more comments next to important lines of code, which I agree will make it more understandable. It may be a case of moving comments above chunks of code in line and between the lines of my code, to pinpoint which line in that chunk I am referring to.
+
+My partner also suggested creating functions which I agree with, it will greatly improve the reproducibility of my code as I can then reuse that code more easily, at a later date
+
+The suggestion to save a clean data file is also correct, so other people can start with the already cleaned data, currently they will have to go back to the raw data and clean the data themselves, which is an unecessary waste of time as I have already done it before, but not made it easily reproducible
+
+-   *What did you learn about writing code for other people?*
+I have learnt that writing code for others changes the way it look in comparison to if I was writing code for myself, as I want others to be able to use the same functions as I did. I going to work on improving this for my future code. 
+I have learnt I am better at producing understandable than reproducible code, but that may be a big problem considering the amount of scientific data is not reproducible, slowing down the process of advancing research and using people's time as they code the same things others have already done previously. 
+
